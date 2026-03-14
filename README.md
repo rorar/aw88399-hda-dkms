@@ -125,9 +125,9 @@ The `.deb` package installs this automatically via `/etc/default/grub.d/99-aw883
 
 ## Differences from Nadim's Solution
 
-[nadimkobeissi/16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga) requires full kernel recompilation. This DKMS package provides the same functionality without rebuilding the kernel.
+The original fix by [Lyapsus](https://github.com/Lyapsus) and [Nadim Kobeissi](https://nadim.computer) at [nadimkobeissi/16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga) is a kernel patch that requires full kernel recompilation. This DKMS package provides the same core audio functionality without rebuilding the kernel, plus additional hardware integration.
 
-| Aspect | Nadim (kernel patch) | This (DKMS) |
+| Aspect | Nadim/Lyapsus (kernel patch) | This (DKMS) |
 |--------|---------------------|-------------|
 | Install | Full kernel rebuild | `dpkg -i` / `make && install.sh` |
 | Kernel updates | Must re-patch & rebuild | DKMS auto-rebuilds |
@@ -137,6 +137,28 @@ The `.deb` package installs this automatically via `/etc/default/grub.d/99-aw883
 | ACPI IRQ (fault alerts) | Not implemented | Acquired and passed to I2C clients |
 
 Core audio logic (HDA scodec driver, fixups, ASoC patches) is functionally identical.
+
+### The `scan.c` problem and our workaround
+
+The `serial-multi-instantiate` driver creates multiple I2C client devices from a single ACPI node — exactly what we need for the two AW88399 amplifiers at addresses 0x34 and 0x35 declared under a single `AWDZ8399` ACPI device. However, for SMI to claim the ACPI device, the device's HID must be listed in the `ignore_serial_bus_ids[]` array in `drivers/acpi/scan.c`. This array tells the ACPI enumerator *not* to create a single I2C client itself, leaving the device for SMI to handle instead.
+
+The problem: `scan.c` is compiled directly into `vmlinux` — it is not a loadable module. DKMS can only build and replace kernel modules (`.ko` files), so there is no way to patch `scan.c` without rebuilding the entire kernel. This is the fundamental obstacle that makes a pure DKMS solution non-trivial.
+
+**Nadim/Lyapsus's approach** patches `scan.c` directly, adding `{"AWDZ8399", }` to `ignore_serial_bus_ids[]`. Clean and correct, but requires a full kernel rebuild.
+
+**Our approach** uses `aw88399-setup.ko`, a helper module that works *after* the ACPI enumerator has already created its single I2C client:
+
+1. At boot, `scan.c` does not know about `AWDZ8399`, so it creates a single I2C client (`i2c-AWDZ8399:00`) at one of the two addresses (typically 0x35).
+2. `aw88399-setup.ko` loads and finds this existing client by scanning `i2c_bus_type` for a device named `i2c-AWDZ8399:00`.
+3. Before touching the client, it grabs the ACPI companion device to access hardware resources:
+   - Toggles the reset GPIO (from `_CRS` GpioIo index 0) to hardware-reset both amplifiers
+   - Queries `_DSM` function 3 for factory speaker calibration data (9 bytes)
+   - Acquires the fault interrupt IRQ from `_CRS` GpioInt
+4. It unbinds and unregisters the single ACPI-created client.
+5. It creates **two** new I2C client devices with carefully crafted `dev_name` values (`AWDZ8399:00-aw88399-hda.0` at 0x34, `AWDZ8399:00-aw88399-hda.1` at 0x35) that match the HDA component binding pattern expected by the Realtek codec fixup (`comp_generic_fixup` with match string `"-%s:00-aw88399-hda.%d"`).
+6. The calibration data and IRQ are passed to both clients via `platform_data`.
+
+From this point on, `snd-hda-scodec-aw88399-i2c` binds to the two clients and the rest of the audio pipeline works identically to the kernel patch approach. The patched `serial-multi-instantiate.c` is still included in the DKMS package (with the `AWDZ8399` SMI node added) but acts as a no-op since `aw88399-setup.ko` handles device creation first. It is kept for forward-compatibility — if `AWDZ8399` is eventually added to `scan.c` upstream, SMI will take over and `aw88399-setup.ko` will gracefully find no existing client to replace.
 
 ## Troubleshooting
 
