@@ -1,0 +1,29 @@
+# Build artifacts
+*.o
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
+*.dwo
+.*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+
+# DKMS build
+/dkms.conf.tmp
+
+# Debian package
+*.deb
+
+# Editor/IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
