@@ -179,6 +179,25 @@ aplay -l | grep ALC287
 - [CachyOS issue #687 - AW88399 quirk](https://github.com/CachyOS/linux-cachyos/issues/687)
 - [Fedora discussion - ALC3306 Legion audio](https://discussion.fedoraproject.org/t/problems-with-audio-driver-alc3306-in-a-legion-pro-7-gen-10-and-other-similar-lenovo-laptops/161992)
 
+## Credits
+
+This DKMS module is derived from the kernel patch solution at
+[nadimkobeissi/16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga).
+
+- **[Lyapsus](https://github.com/Lyapsus)** — Primary author (~95% of the engineering). Wrote the HDA side-codec drivers (`aw88399_hda.c`, `aw88399_hda_i2c.c`), the ASoC codec modifications, and the Realtek ALC287 fixups.
+- **[Nadim Kobeissi](https://nadim.computer)** — Initial investigation, debugging, codec cleanup, volume control fix, and documentation.
+- **[Richard Garber](https://github.com/rgarber11)** — Internal microphone fix.
+- **[sebetc4](https://github.com/sebetc4)** — UCM2 configuration fix for newer ALSA versions.
+- **[Gianfranco Luceri](https://github.com/gluceri)** — Added 16AFR10H quirk and model support.
+- **Gergo K.** — AW88399 firmware extraction from Windows driver.
+
+Upstream kernel code used:
+- `soc-codecs/aw88399.c` — Copyright (c) 2023 AWINIC Technology CO., LTD (Author: Weidong Wang)
+- `serial-multi-instantiate.c` — Copyright 2018 Hans de Goede
+- `realtek/alc269.c` — Linux kernel Realtek HDA codec driver
+
 ## License
 
-GPL-2.0-only. Based on work by Lyapsus (nadimkobeissi/16iax10h-linux-sound-saga) and the upstream Linux kernel AW88399/CS35L41 drivers.
+GPL-2.0-only. Based on work by Lyapsus and Nadim Kobeissi
+([16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga))
+and upstream Linux kernel AW88399/CS35L41 drivers.

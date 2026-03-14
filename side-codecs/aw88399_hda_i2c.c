@@ -2,7 +2,13 @@
 //
 // aw88399_hda_i2c.c -- AW88399 HDA I2C side codec driver
 //
+// Copyright (c) 2025 Lyapsus <https://github.com/Lyapsus>
+// Copyright (c) 2025 Nadim Kobeissi <nadim@symbolic.software>
+//
 // Based on cs35l41_hda_i2c.c
+//
+// Originally developed as part of:
+//   https://github.com/nadimkobeissi/16iax10h-linux-sound-saga
 //
 
 #include <linux/i2c.h>

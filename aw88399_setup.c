@@ -2,6 +2,9 @@
 //
 // aw88399_setup.c -- Helper module to work around ACPI scan.c limitation
 //
+// Based on work by Lyapsus and Nadim Kobeissi:
+//   https://github.com/nadimkobeissi/16iax10h-linux-sound-saga
+//
 // Since scan.c is built into vmlinux and can't be DKMS'd, this module:
 // 1. Finds the existing single I2C client created by ACPI for AWDZ8399
 // 2. Acquires the reset GPIO from the ACPI device

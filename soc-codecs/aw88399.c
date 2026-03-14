@@ -6,6 +6,9 @@
 //
 // Author: Weidong Wang <wangweidong.a@awinic.com>
 //
+// Modified by Lyapsus and Nadim Kobeissi for HDA side codec integration:
+//   https://github.com/nadimkobeissi/16iax10h-linux-sound-saga
+//
 
 #include <linux/crc32.h>
 #include <linux/gpio/consumer.h>

@@ -2,7 +2,13 @@
  *
  * aw88399_hda.h -- AW88399 HDA side codec driver
  *
+ * Copyright (c) 2025 Lyapsus <https://github.com/Lyapsus>
+ * Copyright (c) 2025 Nadim Kobeissi <nadim@symbolic.software>
+ *
  * Based on cs35l41_hda.h
+ *
+ * Originally developed as part of:
+ *   https://github.com/nadimkobeissi/16iax10h-linux-sound-saga
  */
 
 #ifndef __AW88399_HDA_H__

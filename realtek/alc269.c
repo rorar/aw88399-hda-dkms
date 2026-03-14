@@ -2,6 +2,9 @@
 //
 // Realtek ALC269 and compatible codecs
 //
+// AW88399 fixups based on work by Lyapsus and Nadim Kobeissi:
+//   https://github.com/nadimkobeissi/16iax10h-linux-sound-saga
+//
 
 #include <linux/init.h>
 #include <linux/module.h>
