@@ -26,6 +26,7 @@ DKMS_DST="$PKG_DIR/usr/src/${PKGNAME}-${VERSION}"
 cp "$SCRIPT_DIR/dkms.conf" "$DKMS_DST/"
 cp "$SCRIPT_DIR/Makefile" "$DKMS_DST/"
 cp "$SCRIPT_DIR/aw88399_setup.c" "$DKMS_DST/"
+cp "$SCRIPT_DIR/aw88399_pdata.h" "$DKMS_DST/"
 cp "$SCRIPT_DIR/serial-multi-instantiate.c" "$DKMS_DST/"
 
 cp -r "$SCRIPT_DIR/realtek" "$DKMS_DST/"
