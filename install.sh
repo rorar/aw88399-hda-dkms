@@ -19,7 +19,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Step 1: Install firmware
-echo "[1/4] Installing firmware..."
+echo "[1/5] Installing firmware..."
 if [ -f "$SCRIPT_DIR/firmware/aw88399_acf.bin" ]; then
     cp "$SCRIPT_DIR/firmware/aw88399_acf.bin" /lib/firmware/
     echo "  Installed /lib/firmware/aw88399_acf.bin"
@@ -30,7 +30,7 @@ else
 fi
 
 # Step 2: Install modules
-echo "[2/4] Installing kernel modules..."
+echo "[2/5] Installing kernel modules..."
 DEST="$MOD_DIR/updates/dkms"
 mkdir -p "$DEST"
 
@@ -54,7 +54,7 @@ depmod -a "$KVER"
 echo "  Module dependencies updated"
 
 # Step 3: Configure module loading order
-echo "[3/4] Configuring module loading..."
+echo "[3/5] Configuring module loading..."
 cat > /etc/modprobe.d/aw88399-hda.conf << 'MODCONF'
 # AW88399 HDA sound fix for Lenovo Legion
 # Blacklist the old snd_soc_aw88399 ACPI binding (we use HDA scodec instead)
@@ -64,8 +64,37 @@ softdep snd-hda-codec-alc269 pre: snd-hda-scodec-aw88399-i2c
 MODCONF
 echo "  Created /etc/modprobe.d/aw88399-hda.conf"
 
-# Step 4: Update initramfs
-echo "[4/4] Updating initramfs..."
+# Step 4: Install WirePlumber config (SOF DSP broken pipe workaround)
+echo "[4/5] Installing WirePlumber config..."
+WP_DIR="/usr/share/wireplumber/wireplumber.conf.d"
+if [ -d "$(dirname "$WP_DIR")" ]; then
+    mkdir -p "$WP_DIR"
+    cat > "$WP_DIR/50-aw88399-sof-fix.conf" << 'WPCONF'
+# Fix broken pipe / XRUN issue with SOF HDA DSP speaker output
+# on Lenovo Legion laptops with AW88399 smart amplifiers.
+monitor.alsa.rules = [
+  {
+    matches = [
+      {
+        node.name = "~alsa_output.pci-*-platform-skl_hda_dsp_generic.*"
+      }
+    ]
+    actions = {
+      update-props = {
+        api.alsa.period-size   = 2048
+        api.alsa.headroom      = 8192
+      }
+    }
+  }
+]
+WPCONF
+    echo "  Created $WP_DIR/50-aw88399-sof-fix.conf"
+else
+    echo "  WirePlumber not found, skipping"
+fi
+
+# Step 5: Update initramfs
+echo "[5/5] Updating initramfs..."
 if command -v update-initramfs &>/dev/null; then
     update-initramfs -u -k "$KVER"
 elif command -v dracut &>/dev/null; then

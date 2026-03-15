@@ -18,6 +18,7 @@ mkdir -p "$PKG_DIR/usr/src/${PKGNAME}-${VERSION}"
 mkdir -p "$PKG_DIR/lib/firmware"
 mkdir -p "$PKG_DIR/etc/modprobe.d"
 mkdir -p "$PKG_DIR/etc/default/grub.d"
+mkdir -p "$PKG_DIR/usr/share/wireplumber/wireplumber.conf.d"
 
 # --- Copy DKMS source (only what's needed to build) ---
 DKMS_DST="$PKG_DIR/usr/src/${PKGNAME}-${VERSION}"
@@ -57,6 +58,29 @@ softdep snd-hda-scodec-aw88399-i2c pre: aw88399-setup
 softdep snd-hda-codec-alc269 pre: snd-hda-scodec-aw88399-i2c
 EOF
 
+# --- WirePlumber config (SOF DSP broken pipe workaround) ---
+cat > "$PKG_DIR/usr/share/wireplumber/wireplumber.conf.d/50-aw88399-sof-fix.conf" << 'EOF'
+# Fix broken pipe / XRUN issue with SOF HDA DSP speaker output
+# on Lenovo Legion laptops with AW88399 smart amplifiers.
+# PipeWire's default headroom is too tight for the SOF DSP pipeline,
+# causing snd_pcm_avail recovery loops and no audio output.
+monitor.alsa.rules = [
+  {
+    matches = [
+      {
+        node.name = "~alsa_output.pci-*-platform-skl_hda_dsp_generic.*"
+      }
+    ]
+    actions = {
+      update-props = {
+        api.alsa.period-size   = 2048
+        api.alsa.headroom      = 8192
+      }
+    }
+  }
+]
+EOF
+
 # --- grub config ---
 cat > "$PKG_DIR/etc/default/grub.d/99-aw88399-hda.cfg" << 'EOF'
 # AW88399 requires SOF DSP driver for I2S clock
@@ -86,7 +110,8 @@ Description: AW88399 smart amplifier DKMS driver for Lenovo Legion laptops
   - serial-multi-instantiate (AWDZ8399 dual I2C support)
   - aw88399-setup (ACPI workaround helper)
  .
- Also installs AW88399 firmware and sets snd_intel_dspcfg.dsp_driver=3.
+ Also installs AW88399 firmware, sets snd_intel_dspcfg.dsp_driver=3,
+ and includes a WirePlumber config to fix SOF DSP broken pipe issues.
 EOF
 
 # --- postinst ---
@@ -147,6 +172,7 @@ if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then
     rm -f /lib/firmware/aw88399_acf.bin
     rm -f /etc/modprobe.d/aw88399-hda.conf
     rm -f /etc/default/grub.d/99-aw88399-hda.cfg
+    rm -f /usr/share/wireplumber/wireplumber.conf.d/50-aw88399-sof-fix.conf
 
     if command -v update-grub &>/dev/null; then
         update-grub 2>/dev/null || true
