@@ -23,6 +23,22 @@ sudo ./install.sh
 sudo reboot
 ```
 
+### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S --needed base-devel clang lld linux-cachyos-headers
+make
+sudo ./install.sh
+sudo reboot
+sudo ./verify.sh
+```
+
+The build now auto-detects Clang-built kernels and reruns Kbuild with `LLVM=1`,
+which is required for CachyOS and other Arch kernels built with LLVM. On Limine
+systems, `install.sh` also installs a drop-in under
+`/etc/limine-entry-tool.d/99-aw88399-hda.conf` to add the required
+`snd_intel_dspcfg.dsp_driver=3` kernel parameter automatically.
+
 ## What This Does
 
 These laptops have speakers wired through **Awinic AW88399** smart amplifiers connected via I2C. The HDA codec (Realtek ALC287) handles headphones and mic directly, but the speakers need the AW88399 amps to be initialized with firmware and controlled via I2C. Linux has no upstream support for this configuration, resulting in barely audible speakers.
@@ -46,7 +62,8 @@ This package builds 6 kernel modules via DKMS and installs firmware + boot confi
 |------|----------|---------|
 | `aw88399_acf.bin` | `/lib/firmware/` | AW88399 DSP firmware (from Windows driver) |
 | `aw88399-hda.conf` | `/etc/modprobe.d/` | Module loading order (softdeps) |
-| `99-aw88399-hda.cfg` | `/etc/default/grub.d/` | Sets `snd_intel_dspcfg.dsp_driver=3` boot parameter |
+| `99-aw88399-hda.cfg` | `/etc/default/grub.d/` | Sets `snd_intel_dspcfg.dsp_driver=3` boot parameter on GRUB systems |
+| `99-aw88399-hda.conf` | `/etc/limine-entry-tool.d/` | Sets `snd_intel_dspcfg.dsp_driver=3` boot parameter on Limine systems |
 
 ## How It Works
 
@@ -122,6 +139,7 @@ Currently captured and passed to the HDA driver via `platform_data`. Full applic
 This forces SOF (Sound Open Firmware) mode for the Intel HDA controller. The AW88399 amps need an I2S clock from the Intel DSP to lock their PLL. Without SOF, the PLL check fails and the amps can't start.
 
 The `.deb` package installs this automatically via `/etc/default/grub.d/99-aw88399-hda.cfg`.
+The source installer does the same for Limine via `/etc/limine-entry-tool.d/99-aw88399-hda.conf`.
 
 ## Differences from Nadim's Solution
 
@@ -163,6 +181,9 @@ From this point on, `snd-hda-scodec-aw88399-i2c` binds to the two clients and th
 ## Troubleshooting
 
 ```bash
+# Run the full post-boot verification script
+sudo ./verify.sh
+
 # Check if modules loaded and amps bound
 sudo dmesg | grep -i aw88399
 

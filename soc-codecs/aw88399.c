@@ -22,6 +22,11 @@
 #include "aw88399.h"
 #include "aw88395/aw88395_device.h"
 
+#ifndef snd_soc_kcontrol_component
+#define snd_soc_kcontrol_component(kcontrol) \
+	((struct snd_soc_component *)snd_kcontrol_chip(kcontrol))
+#endif
+
 static const struct regmap_config aw88399_remap_config = {
 	.val_bits = 16,
 	.reg_bits = 8,
